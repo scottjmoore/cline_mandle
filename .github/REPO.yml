@@ -1,0 +1,17 @@
+# Repository settings
+---
+repository: cline_mandle
+description: Mandelbrot Console Explorer - Interactive terminal viewer for the Mandelbrot set
+branch: main
+license: MIT
+
+github_actions: true  # Enable GitHub Actions
+
+workflows:
+  - name: Test suite
+    run_tests: true
+    test_dir: build
+
+repository_settings:
+  auto_merge: false
+  allow_squash_merge: true

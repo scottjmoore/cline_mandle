@@ -98,23 +98,12 @@ int run_app(const CliArgs& args) {
         terminal_cursor_move(0, 0);
 
         for (uint32_t r = 0; r < draw_rows; ++r) {
-            terminal_write(render_row(view, r, ts.cols, draw_rows, max_iter, palette));
-            // Update progressive status bar every 5 rows (and on first/last)
-            if (r % 5 == 0 || r == draw_rows - 1) {
-                terminal_cursor_move(0, ts.rows - 1);
-                terminal_write(status_bar_rendering(view, ts.cols, draw_rows, r + 1,
-                                                   max_iter, palette_id));
-                // Re-position cursor for the next fractal row.
-                // Note: status_bar_rendering does NOT emit '\n', so cursor stays at ts.rows-1.
-                // We need to move back to the NEXT fractal row (r+1), not r+2.
-                uint32_t next_row = r + 1;  // Move back one from where we left off
-                if (next_row < draw_rows) {
-                    terminal_cursor_move(0, next_row);
-                }
-            }
+            // Render a fractal row - this writes with newline at end
+            const std::string row_content = render_row(view, r, ts.cols, draw_rows, max_iter, palette);
+            terminal_write(row_content);
         }
 
-        // Final status bar on last row
+        // Status bar (no update during rendering for simplicity)
         terminal_cursor_move(0, ts.rows - 1);
         terminal_write(status_bar(view, ts.cols, draw_rows, max_iter, palette_id));
     };

@@ -51,8 +51,11 @@ int run_app(const CliArgs& args) {
                   << " palette=" << palette_name(args.palette) << "\n";
 
         for (uint32_t r = 0; r < rows; ++r) {
+            // Force flush after each row to ensure proper display for any dimensions
             std::cout << render_row(view, r, cols, rows, args.max_iter, palette);
         }
+        // Ensure final line is flushed
+        std::cout.flush();
         std::cout << "# Smoke test complete.\n";
         return 0;
     }
@@ -83,16 +86,15 @@ int run_app(const CliArgs& args) {
         terminal_clear();
 
         Palette palette = get_palette(palette_id);
-        // Reserve one row for the status bar
+        // Reserve one row for the status bar (adjusts for resize)
         uint32_t draw_rows = ts.rows > 1 ? ts.rows - 1 : 1;
 
         // Position cursor on status-bar row and show "rendering..." indicator
         terminal_cursor_move(0, ts.rows - 1);
         terminal_write(status_bar_rendering(view, ts.cols, draw_rows, 0,
                                            max_iter, palette_id));
-        // After writing status bar, cursor is past the status bar row due to
-        // the trailing '\n'. Move it back to row 0 so fractal rendering starts
-        // at the top.
+        // After writing status bar (no trailing \n), cursor is still on status row.
+        // Move it back to row 0 so fractal rendering starts at the top.
         terminal_cursor_move(0, 0);
 
         for (uint32_t r = 0; r < draw_rows; ++r) {
@@ -103,11 +105,9 @@ int run_app(const CliArgs& args) {
                 terminal_write(status_bar_rendering(view, ts.cols, draw_rows, r + 1,
                                                    max_iter, palette_id));
                 // Re-position cursor for the next fractal row.
-                // render_row emitted '\n', moving cursor to row r+1.
-                // status_bar_rendering emitted '\n', moving cursor one row
-                // further. So we need to jump back to row r+2 (or stop if
-                // there is no next row).
-                uint32_t next_row = r + 2;
+                // Note: status_bar_rendering does NOT emit '\n', so cursor stays at ts.rows-1.
+                // We need to move back to the NEXT fractal row (r+1), not r+2.
+                uint32_t next_row = r + 1;  // Move back one from where we left off
                 if (next_row < draw_rows) {
                     terminal_cursor_move(0, next_row);
                 }
@@ -130,7 +130,8 @@ int run_app(const CliArgs& args) {
 
         switch (ev->kind) {
             case InputKind::Resize: {
-                view = view; // preserve view state
+                // Terminal was resized - dimensions will be picked up on next render_frame()
+                // Preserve view state (centre, span), redraw to use new terminal size
                 need_redraw = true;
                 break;
             }

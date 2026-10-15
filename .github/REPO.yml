@@ -15,3 +15,8 @@ workflows:
 repository_settings:
   auto_merge: false
   allow_squash_merge: true
+
+To push to GitHub, run:
+  git remote add origin https://github.com/YOUR_USERNAME/cline_mandle.git
+  git branch -M main
+  git push -u origin main --force
